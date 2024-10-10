@@ -1,0 +1,24 @@
+{
+  "development": {
+    "username": "root",
+    "password": "mysql_cAw5wB",
+    "database": "blog_server_development",
+    "host": "47.103.110.201",
+    "dialect": "mysql",
+    "timezone": "+8:00"
+  },
+  "test": {
+    "username": "root",
+    "password": null,
+    "database": "database_test",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": null,
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}
