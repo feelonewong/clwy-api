@@ -6,19 +6,28 @@ const {Op} = require("sequelize");
 
 // 获取文章列表
 router.get('/', async function (req, res, next) {
+    const query = req.query
+    const pageSize = Math.abs(query.pageSize) || 10
+    const currentPage = Math.abs(query.currentPage) || 0
+    const offset = (currentPage - 1) * pageSize
+
     const condition = {
-        order: [['id', 'DESC']]
+        order: [['id', 'DESC']],
+        limit: pageSize,
+        offset: offset
     }
+
     try {
-        const articles = await Article.findAll(condition)
+        const articles = await Article.findAndCountAll(condition)
         res.json({
             status: true, message: '数据查询成功', data: {
-                articles
+                rows: articles.rows,
+                total: articles.count
             }
         });
     } catch (e) {
         res.json({
-            status: false, message: '数据查询成功', errors: [e.message]
+            status: false, message: '数据查询失败', errors: [e.message]
         });
     }
 
@@ -54,19 +63,26 @@ router.get('/:id', async function (req, res, next) {
 
 // 新增文章
 router.post('/', async function (req, res, next) {
-    const body = {
-        title: req.body.title,
-        content: req.body.content
-    }
+    // 白名单过滤数据：防止用户乱传数据
+    const body = filterBody(req)
     try {
         const articles = await Article.create(body)
         res.status(201).json({
             status: true, message: '数据新增成功'
         });
     } catch (e) {
-        res.json({
-            status: false, message: '数据新增失败'
-        });
+        if(e.name === 'SequelizeValidationError'){
+            const errors = e.errors.map(item=>item.message)
+            res.json({
+                status: false,
+                message: '数据新增失败',
+                errors
+            });
+        }else {
+            res.json({
+                status: false, message: '数据新增失败'
+            });
+        }
     }
 });
 
@@ -102,14 +118,11 @@ router.delete('/', async function (req, res, next) {
 router.put('/:id', async function (req, res) {
     // 先找数据在更新，找不到不更新
     const {id} = req.params
-    const body = req.body
+    const body = filterBody(req)
     try {
         const article = await Article.findByPk(id)
         if (article) {
-            await article.update({
-                title: body.title,
-                content: body.content
-            }, {
+            await article.update(body, {
                 where: {
                     id
                 }
@@ -161,4 +174,11 @@ router.get('/', async function (req, res) {
     }
 })
 
+// 白名单过滤
+function filterBody (req) {
+    return {
+        title: req.body.title,
+        content: req.body.cotent
+    }
+}
 module.exports = router;
