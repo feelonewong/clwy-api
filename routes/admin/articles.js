@@ -2,61 +2,51 @@ const express = require("express")
 const router = express.Router();
 const {Article} = require('../../models')
 const {Op} = require("sequelize");
-
+const {
+    NotFoundError,
+    success,
+    failure
+} = require('../../utils/response')
 
 // 获取文章列表
 router.get('/', async function (req, res, next) {
     const query = req.query
     const pageSize = Math.abs(query.pageSize) || 10
-    const currentPage = Math.abs(query.currentPage) || 0
+    const currentPage = Math.abs(query.currentPage) || 1
     const offset = (currentPage - 1) * pageSize
-
     const condition = {
         order: [['id', 'DESC']],
         limit: pageSize,
         offset: offset
     }
+    if (query.title) {
+        condition.where = {
+            title: {
+                [Op.like]: `%${query.title}%`
+            }
+        }
+    }
 
     try {
         const articles = await Article.findAndCountAll(condition)
-        res.json({
-            status: true, message: '数据查询成功', data: {
-                rows: articles.rows,
-                total: articles.count
-            }
-        });
-    } catch (e) {
-        res.json({
-            status: false, message: '数据查询失败', errors: [e.message]
-        });
-    }
 
+        success(res, '数据查询成功',{
+            articles: articles.rows,
+            total: articles.count
+        } )
+    } catch (e) {
+        console.log('error')
+        failure(res, e)
+    }
 });
 
 // 获取文章详情
 router.get('/:id', async function (req, res, next) {
-    // 路由地址参数
-    const {id} = req.params
     try {
-        const article = await Article.findByPk(id)
-        if (article) {
-            res.json({
-                status: true,
-                message: '课程详情查询成功',
-                data: {
-                    article
-                }
-            });
-        } else {
-            res.status(404).json({
-                status: false,
-                message: "数据未找到"
-            })
-        }
+        const article = await getArticle(req)
+        success(res, '文章详情查询成功', {article})
     } catch (e) {
-        res.json({
-            status: false, message: '课程详情查询失败', errors: [e.message]
-        });
+        failure(res, e)
     }
 
 });
@@ -67,49 +57,24 @@ router.post('/', async function (req, res, next) {
     const body = filterBody(req)
     try {
         const articles = await Article.create(body)
-        res.status(201).json({
-            status: true, message: '数据新增成功'
-        });
+        success(res, '文章新增成功', {},201)
     } catch (e) {
-        if(e.name === 'SequelizeValidationError'){
-            const errors = e.errors.map(item=>item.message)
-            res.json({
-                status: false,
-                message: '数据新增失败',
-                errors
-            });
-        }else {
-            res.json({
-                status: false, message: '数据新增失败'
-            });
-        }
+        failure(res, e)
     }
 });
 
 // 删除文章:1.先找到数据，然后在删除数据
 router.delete('/', async function (req, res, next) {
-    const {id} = req.body
     try {
-        const article = await Article.findByPk(id)
+        const article = await getArticle(req)
         if (article) {
             await article.destroy()
-            res.json({
-                status: true,
-                message: '课程删除成功',
-                data: {
-                    article
-                }
-            });
+            success(res, '课程删除成功', {article})
         } else {
-            res.status(404).json({
-                status: false,
-                message: "数据未找到"
-            })
+            failure(res, e)
         }
     } catch (e) {
-        res.json({
-            status: false, message: '课程删除失败', errors: [e.message]
-        });
+        failure(res, e)
     }
 
 });
@@ -120,65 +85,35 @@ router.put('/:id', async function (req, res) {
     const {id} = req.params
     const body = filterBody(req)
     try {
-        const article = await Article.findByPk(id)
-        if (article) {
-            await article.update(body, {
-                where: {
-                    id
-                }
-            })
-            res.json({
-                status: true,
-                message: '文章更新成功',
-                data: {
-                    article
-                }
-            });
-        } else {
-            res.status(404).json({
-                status: false,
-                message: "非法的id，数据未找到！"
-            })
-        }
-    } catch (e) {
-        res.json({
-            status: false, message: '文章更新失败', errors: [e.message]
-        });
-    }
-})
-
-// 模糊查询
-router.get('/', async function (req, res) {
-    try {
-        const query = req.query
-        const condition = {
-            order: [['id', 'DESC']]
-        }
-        if (query.title) {
-            condition.where = {
-                title: {
-                    [Op.like]: `%${query.title}%`
-                }
+        const article = await getArticle(req)
+        await article.update(body, {
+            where: {
+                id
             }
-        }
-        const articles = await Article.findAll(condition)
-        res.json({
-            status: true, message: '数据查询成功', data: {
-                articles
-            }
-        });
+        })
+        success(res, '文章更新成功', {article})
     } catch (e) {
-        res.json({
-            status: false, message: '数据查询成功', errors: [e.message]
-        });
+        failure(res, e)
     }
 })
 
 // 白名单过滤
-function filterBody (req) {
+function filterBody(req) {
     return {
         title: req.body.title,
-        content: req.body.cotent
+        content: req.body.content
     }
 }
+
+// 公共方法用来查询数据
+async function getArticle(req) {
+    const {id} = req.params
+    const article = await Article.findByPk(id)
+
+    if (!article) {
+        throw new NotFoundError(`ID: ${id}的文章未找到.`)
+    }
+    return article
+}
+
 module.exports = router;
