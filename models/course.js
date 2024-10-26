@@ -6,8 +6,9 @@ module.exports = (sequelize, DataTypes) => {
     class Course extends Model {
         // 关联其他表的模型
         static associate(models) {
-            models.Course.belongsTo(models.Category);
-            models.Course.belongsTo(models.User);
+            models.Course.belongsTo(models.Category, {as: 'category'});
+            models.Course.belongsTo(models.User, {as: 'user'});
+            models.Chapter.hasMany(models.Chapter, {as: 'chapters'});
         }
     }
 

@@ -1,6 +1,6 @@
 const express = require("express")
 const router = express.Router();
-const {Course, Category, User} = require('../../models')
+const {Course, Category, User, Chapter} = require('../../models')
 const {Op} = require("sequelize");
 const {
     NotFoundError,
@@ -19,12 +19,12 @@ router.get('/', async function (req, res, next) {
         include: [
             {
                 model: Category,
-                as: 'Category',
+                as: 'category',
                 attributes: ['id', 'name']
             },
             {
                 model: User,
-                as: 'User',
+                as: 'user',
                 attributes: ['id', 'username', 'avatar']
             }
         ],
@@ -128,9 +128,15 @@ router.post('/', async function (req, res, next) {
 });
 
 // 删除课程:1.先找到数据，然后在删除数据
-router.delete('/', async function (req, res, next) {
+router.delete('/:id', async function (req, res, next) {
     try {
+        console.log(1234, 'delete')
+
         const course = await getCourse(req)
+        const count = await Chapter.count({where: {courseId: req.params.id}})
+        if(count > 0) {
+            throw new Error("当前课程有章节，无法删除！")
+        }
         if (course) {
             await course.destroy()
             success(res, '课程删除成功', {course})
@@ -183,12 +189,12 @@ async function getCourse(req) {
         include: [
             {
                 model: Category,
-                as: 'Category',
+                as: 'category',
                 attributes: ['id', 'name']
             },
             {
                 model: User,
-                as: 'User',
+                as: 'user',
                 attributes: ['id', 'username', 'avatar']
             }
         ],
@@ -197,7 +203,7 @@ async function getCourse(req) {
     const course = await Course.findByPk(id,condition)
 
     if (!course) {
-        throw new NotFoundError(`ID: ${id}的课程未找到.`)
+        throw new NotFoundError(`ID: ${id}的课程未找到。`)
     }
     return course
 }
