@@ -1,6 +1,6 @@
 const express = require("express")
 const router = express.Router();
-const {Category} = require('../../models')
+const {Category, Course} = require('../../models')
 const {Op} = require("sequelize");
 const {
     NotFoundError,
@@ -64,15 +64,16 @@ router.post('/', async function (req, res, next) {
 });
 
 // 删除分类:1.先找到数据，然后在删除数据
-router.delete('/', async function (req, res, next) {
+router.delete('/:id', async function (req, res, next) {
     try {
         const category = await getCategory(req)
-        if (category) {
-            await category.destroy()
-            success(res, '课程删除成功', {category})
-        } else {
-            failure(res, e)
+
+        const count = await  Course.count({where: {categoryId: req.params.id}})
+        if(count > 0) {
+            throw new Error('当前分类有课程，无法删除！')
         }
+        await category.destroy()
+        success(res, '课程删除成功', {category})
     } catch (e) {
         failure(res, e)
     }
@@ -108,7 +109,15 @@ function filterBody(req) {
 // 公共方法用来查询数据
 async function getCategory(req) {
     const {id} = req.params
-    const category = await Category.findByPk(id)
+    const condition = {
+        include: [
+            {
+                model: Course,
+                as: 'courses'
+            }
+        ]
+    }
+    const category = await Category.findByPk(id, condition)
 
     if (!category) {
         throw new NotFoundError(`ID: ${id}的分类未找到.`)
