@@ -3,10 +3,10 @@ const router = express.Router();
 const {Chapter, Course} = require('../../models')
 const {Op} = require("sequelize");
 const {
-    NotFoundError,
     success,
     failure
-} = require('../../utils/response')
+} = require('../../utils/responses')
+const {NotFoundError} = require('../../utils/errors')
 
 // 获取章节列表
 router.get('/', async function (req, res, next) {

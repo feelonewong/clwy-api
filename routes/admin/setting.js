@@ -3,10 +3,10 @@ const router = express.Router();
 const {Setting} = require('../../models')
 const {Op} = require("sequelize");
 const {
-    NotFoundError,
     success,
     failure
-} = require('../../utils/response')
+} = require('../../utils/responses')
+const {NotFoundError} = require('../../utils/errors')
 
 // 获取系统系统设置
 router.get('/', async function (req, res, next) {

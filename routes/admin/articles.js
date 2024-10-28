@@ -3,11 +3,10 @@ const router = express.Router();
 const {Article} = require('../../models')
 const {Op} = require("sequelize");
 const {
-    NotFoundError,
     success,
     failure
-} = require('../../utils/response')
-
+} = require('../../utils/responses')
+const {NotFoundError} = require('../../utils/errors')
 // 获取文章列表
 router.get('/', async function (req, res, next) {
     const query = req.query
@@ -30,10 +29,10 @@ router.get('/', async function (req, res, next) {
     try {
         const articles = await Article.findAndCountAll(condition)
 
-        success(res, '数据查询成功',{
+        success(res, '数据查询成功', {
             articles: articles.rows,
             total: articles.count
-        } )
+        })
     } catch (e) {
         console.log('error')
         failure(res, e)
@@ -57,7 +56,7 @@ router.post('/', async function (req, res, next) {
     const body = filterBody(req)
     try {
         const articles = await Article.create(body)
-        success(res, '文章新增成功', {},201)
+        success(res, '文章新增成功', {}, 201)
     } catch (e) {
         failure(res, e)
     }
