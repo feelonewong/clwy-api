@@ -2,13 +2,16 @@
 const {
     Model
 } = require('sequelize');
+const dayjs = require('dayjs');
+const CN = require('dayjs/locale/zh-cn');
+dayjs.locale(CN);
 module.exports = (sequelize, DataTypes) => {
     class Course extends Model {
         // 关联其他表的模型
         static associate(models) {
             models.Course.belongsTo(models.Category, {as: 'category'});
             models.Course.belongsTo(models.User, {as: 'user'});
-            models.Chapter.hasMany(models.Chapter, {as: 'chapters'});
+            models.Course.hasMany(models.Chapter, {as: 'chapters'});
         }
     }
 
@@ -71,7 +74,20 @@ module.exports = (sequelize, DataTypes) => {
         },
         content: DataTypes.TEXT,
         likesCount: DataTypes.INTEGER,
-        chaptersCount: DataTypes.INTEGER
+        chaptersCount: DataTypes.INTEGER,
+        createdAt: {
+            type: DataTypes.DATE,
+            get() {
+                return dayjs(this.getDataValue("createdAt")).format('YYYY年MM月DD日 hh:mm:ss');
+            }
+        },
+        updatedAt: {
+            type: DataTypes.DATE,
+            get() {
+                return dayjs(this.getDataValue("updatedAt")).format('YYYY年MM月DD日 hh:mm:ss');
+            }
+        },
+
     }, {
         sequelize,
         modelName: 'Course',

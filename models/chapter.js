@@ -2,13 +2,11 @@
 const {
   Model
 } = require('sequelize');
+const dayjs = require('dayjs');
+const CN = require('dayjs/locale/zh-cn');
+dayjs.locale(CN);
 module.exports = (sequelize, DataTypes) => {
   class Chapter extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
       models.Chapter.belongsTo(models.Course, {as: 'course'});
     }
@@ -56,6 +54,18 @@ module.exports = (sequelize, DataTypes) => {
             throw new Error('排序必须是正整数。');
           }
         }
+      }
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      get() {
+        return dayjs(this.getDataValue("createdAt")).format('YYYY年MM月DD日 hh:mm:ss');
+      }
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      get() {
+        return dayjs(this.getDataValue("updatedAt")).format('YYYY年MM月DD日 hh:mm:ss');
       }
     },
 

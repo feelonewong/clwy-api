@@ -6,6 +6,8 @@ const logger = require('morgan');
 const adminAuth = require("./middlewares/admin-auth")
 
 const indexRouter = require('./routes/index');
+const categoriesRouter = require('./routes/categories')
+const courses = require('./routes/courses')
 const usersRouter = require('./routes/users');
 const AdminArticleRouter = require('./routes/admin/articles')
 const AdminCategoryRouter = require('./routes/admin/categories')
@@ -27,6 +29,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
+app.use('/categories', categoriesRouter);
+app.use('/courses', courses);
 app.use('/admin/articles', adminAuth, AdminArticleRouter)
 app.use('/admin/category', adminAuth, AdminCategoryRouter)
 app.use('/admin/setting', adminAuth, AdminSettingRouter)
